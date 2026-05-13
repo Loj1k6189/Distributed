@@ -13,7 +13,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="40" />
+    <option name="cachedIndexableFilesCount" value="84" />
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -24,12 +24,12 @@
     &quot;assignee&quot;: &quot;Loj1k6189&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/Loj1k6189/Distributed.git",
-    "accountId": "500bd0de-eae7-43b0-9b15-62074b510144"
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/Loj1k6189/Distributed.git&quot;,
+    &quot;accountId&quot;: &quot;671286e1-2ec7-4f84-adb9-e08b6d7c3bc4&quot;
   }
-}]]></component>
+}</component>
   <component name="MavenImportPreferences">
     <option name="generalSettings">
       <MavenGeneralSettings>
@@ -75,7 +75,7 @@
     &quot;project.structure.last.edited&quot;: &quot;模块&quot;,
     &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
     &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;ml.llm.AcpAgentsConfigurable&quot;,
     &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
     &quot;ts.external.directory.path&quot;: &quot;E:\\大学课程\\分布式\\小组项目\\Distributed\\front-end\\node_modules\\typescript\\lib&quot;,
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
@@ -119,6 +119,10 @@
       <workItem from="1777362515629" duration="2098000" />
       <workItem from="1777472841505" duration="591000" />
       <workItem from="1777473555738" duration="3000" />
+      <workItem from="1778034451904" duration="46000" />
+      <workItem from="1778308065269" duration="1280000" />
+      <workItem from="1778580554101" duration="1318000" />
+      <workItem from="1778656036223" duration="206000" />
     </task>
     <task id="LOCAL-00001" summary="搭建了基本的前后端框架。">
       <option name="closed" value="true" />
