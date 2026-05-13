@@ -18,12 +18,10 @@ public class VoteProperties {
     private int redlockReplicas = 5;
 
     private boolean mqEnabled = true;
-    private String mqExchange = "vote.event.exchange";
-    private String mqRoutingKey = "vote.event";
-    private String mqQueue = "vote.event.queue";
-    private String mqDlxExchange = "vote.event.dlx.exchange";
-    private String mqDlxRoutingKey = "vote.event.dlq";
-    private String mqDlqQueue = "vote.event.dlq.queue";
+    private String mqStreamKey = "vote.event.stream";
+    private String mqDlqStreamKey = "vote.event.dlq.stream";
+    private String mqConsumerGroup = "vote.event.group";
+    private String mqConsumerName = "vote.event.consumer";
     private int mqBatchSize = 100;
 
     private int outboxBatchSize = 200;

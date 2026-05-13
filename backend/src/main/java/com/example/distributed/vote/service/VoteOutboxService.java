@@ -5,14 +5,15 @@ import com.example.distributed.vote.domain.VoteOutboxMessage;
 import com.example.distributed.vote.domain.VoteOutboxStatus;
 import com.example.distributed.vote.repository.VoteOutboxRepository;
 import java.time.Instant;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.data.redis.connection.stream.StreamRecords;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.amqp.core.MessageDeliveryMode;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 
@@ -22,7 +23,7 @@ public class VoteOutboxService {
 
     private final VoteOutboxRepository outboxRepository;
     private final ObjectMapper objectMapper;
-    private final ObjectProvider<RabbitTemplate> rabbitTemplateProvider;
+    private final ObjectProvider<StringRedisTemplate> redisTemplateProvider;
     private final VoteProperties voteProperties;
     private final TransactionTemplate transactionTemplate;
 
@@ -39,22 +40,18 @@ public class VoteOutboxService {
     }
 
     public boolean tryPublish(VoteOutboxMessage outboxMessage) {
-        RabbitTemplate rabbitTemplate = rabbitTemplateProvider.getIfAvailable();
-        if (rabbitTemplate == null) {
+        StringRedisTemplate redisTemplate = redisTemplateProvider.getIfAvailable();
+        if (redisTemplate == null) {
             return false;
         }
         VoteEventMessage message = fromPayload(outboxMessage.getPayload());
         try {
-            rabbitTemplate.convertAndSend(
-                    voteProperties.getMqExchange(),
-                    voteProperties.getMqRoutingKey(),
-                    message,
-                    msg -> {
-                        msg.getMessageProperties().setMessageId(message.eventId());
-                        msg.getMessageProperties().setDeliveryMode(MessageDeliveryMode.PERSISTENT);
-                        return msg;
-                    }
-            );
+            redisTemplate.opsForStream().add(StreamRecords.newRecord()
+                    .in(voteProperties.getMqStreamKey())
+                    .ofMap(Map.of(
+                            "eventId", message.eventId(),
+                            "payload", outboxMessage.getPayload()
+                    )));
             transactionTemplate.executeWithoutResult(status -> markSent(outboxMessage.getId()));
             return true;
         } catch (RuntimeException ex) {
