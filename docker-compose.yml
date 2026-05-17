@@ -25,6 +25,7 @@ services:
       MYSQL_DATABASE: vote_db
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./db/init-db.sql:/docker-entrypoint-initdb.d/init.sql  # 添加数据库初始化脚本
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p123456"]
       interval: 10s
@@ -46,7 +47,7 @@ services:
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/vote_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&createDatabaseIfNotExist=true
       - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=123456  # 这里从 'root' 改为 '123456'
+      - SPRING_DATASOURCE_PASSWORD=123456
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_DATA_REDIS_PORT=6379
 
