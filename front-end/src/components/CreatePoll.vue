@@ -5,7 +5,7 @@
 
     <div>
       <label>标题：</label>
-      <input v-model="form.title" placeholder="输入投票标题" />
+      <input v-model="form.name" placeholder="输入投票标题" />
     </div>
 
     <div style="margin: 10px 0">
@@ -27,10 +27,12 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import axios from 'axios'
 
+const router = useRouter()
 const form = ref({
-  title: '',
+  name: '',
   type: 'SINGLE'
 })
 
@@ -41,13 +43,15 @@ const submit = async () => {
 
   try {
     const res = await axios.post('/api/votes/polls', {
-      title: form.value.title,
-      type: form.value.type,
-      options: options
+      name: form.value.name,
+      allowMultiple: form.value.type === 'MULTIPLE',
+      options
     })
-    alert('创建成功！ID：' + res.data.id)
+    const pollId = res.data.pollId
+    alert('创建成功！ID：' + pollId)
+    router.push(`/vote/${pollId}`)
   } catch (e) {
-    alert('创建失败')
+    alert('创建失败：' + (e.response?.data?.message || e.message))
     console.error(e)
   }
 }

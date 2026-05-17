@@ -136,7 +136,7 @@ public class VoteService {
                         option.getOptionText(),
                         finalCountByOption.getOrDefault(option.getId(), 0L))
                 ).toList();
-        return new VotePollResultResponse(poll.getId(), ballots, results);
+        return new VotePollResultResponse(poll.getId(), poll.getName(), poll.isAllowMultiple(), ballots, results);
     }
 
     private List<String> normalizeOptionTexts(List<String> options) {
