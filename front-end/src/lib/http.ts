@@ -13,7 +13,7 @@ class HttpClient {
   private queue: Array<() => void> = []
   private active = 0
   private concurrency: number
-  private instance = axios.create()
+  private instance = axios.create({ baseURL: (import.meta as any).env?.VITE_API_BASE ?? '' })
 
   constructor(concurrency = DEFAULT_CONCURRENCY) {
     this.concurrency = concurrency
