@@ -4,6 +4,8 @@ import com.example.distributed.vote.api.VoteOptionResult;
 import com.example.distributed.vote.api.VotePollCreateRequest;
 import com.example.distributed.vote.api.VotePollCreateResponse;
 import com.example.distributed.vote.api.VotePollResultResponse;
+import com.example.distributed.vote.api.VotePollSubmittedResponse;
+import com.example.distributed.vote.api.VotePollSummaryResponse;
 import com.example.distributed.vote.api.VoteSubmitRequest;
 import com.example.distributed.vote.api.VoteSubmitResponse;
 import com.example.distributed.vote.domain.VoteOption;
@@ -85,7 +87,15 @@ public class VoteService {
         voteRateLimiter.validate(request.pollId(), voterId, ip, requestId);
 
         RedlockService.RedlockToken lockToken = redlockService.acquire("poll:" + request.pollId());
+        boolean voterMarked = false;
         try {
+            if (isSubmitted(request.pollId(), voterId)) {
+                throw new VoteBusinessException("ALREADY_VOTED", "该用户已参与当前投票，不能重复投票", HttpStatus.CONFLICT);
+            }
+            voterMarked = redisVoteCounter.markVotedIfAbsent(request.pollId(), voterId);
+            if (!voterMarked) {
+                throw new VoteBusinessException("ALREADY_VOTED", "该用户已参与当前投票，不能重复投票", HttpStatus.CONFLICT);
+            }
             redisVoteCounter.incrementVote(request.pollId(), optionIds);
             VoteEventMessage eventMessage = new VoteEventMessage(
                     UUID.randomUUID().toString(),
@@ -100,9 +110,17 @@ public class VoteService {
                 outboxService.tryPublish(outboxMessage);
             } catch (RuntimeException ex) {
                 redisVoteCounter.rollbackIncrement(request.pollId(), optionIds);
+                redisVoteCounter.unmarkVoted(request.pollId(), voterId);
+                voterMarked = false;
                 throw new VoteBusinessException("EVENT_WRITE_FAILED", "事务消息保存失败，投票已回滚", HttpStatus.INTERNAL_SERVER_ERROR);
             }
+            voterMarked = false;
             return new VoteSubmitResponse(eventMessage.eventId(), request.pollId(), eventMessage.createdAt());
+        } catch (RuntimeException ex) {
+            if (voterMarked) {
+                redisVoteCounter.unmarkVoted(request.pollId(), voterId);
+            }
+            throw ex;
         } finally {
             redlockService.unlock(lockToken);
         }
@@ -137,6 +155,34 @@ public class VoteService {
                         finalCountByOption.getOrDefault(option.getId(), 0L))
                 ).toList();
         return new VotePollResultResponse(poll.getId(), poll.getName(), poll.isAllowMultiple(), ballots, results);
+    }
+
+    public List<VotePollSummaryResponse> listPolls(boolean activeOnly) {
+        List<VotePoll> polls = activeOnly
+                ? pollRepository.findByStatusOrderByCreatedAtDesc(VotePollStatus.ACTIVE)
+                : pollRepository.findAllByOrderByCreatedAtDesc();
+        return polls.stream()
+                .map(poll -> new VotePollSummaryResponse(
+                        poll.getId(),
+                        poll.getName(),
+                        poll.isAllowMultiple(),
+                        poll.getStatus(),
+                        poll.getCreatedAt()))
+                .toList();
+    }
+
+    public VotePollSubmittedResponse pollSubmitted(Long pollId, String voterId) {
+        VotePoll poll = pollRepository.findById(pollId)
+                .orElseThrow(() -> new VoteBusinessException("POLL_NOT_FOUND", "投票活动不存在", HttpStatus.NOT_FOUND));
+        String normalizedVoterId = voterId == null ? "" : voterId.trim();
+        if (normalizedVoterId.isEmpty()) {
+            throw new VoteBusinessException("VALIDATION_ERROR", "voterId 不能为空", HttpStatus.BAD_REQUEST);
+        }
+        return new VotePollSubmittedResponse(poll.getId(), normalizedVoterId, isSubmitted(pollId, normalizedVoterId));
+    }
+
+    private boolean isSubmitted(Long pollId, String voterId) {
+        return redisVoteCounter.hasVoted(pollId, voterId) || eventRepository.existsByPollIdAndVoterId(pollId, voterId);
     }
 
     private List<String> normalizeOptionTexts(List<String> options) {

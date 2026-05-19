@@ -53,7 +53,8 @@ public class RedisVoteCounter {
     public void initializePoll(Long pollId, List<Long> optionIds) {
         String optionKey = VoteRedisKeys.pollOptions(pollId);
         String countKey = VoteRedisKeys.pollCounts(pollId);
-        redisTemplate.delete(List.of(optionKey, countKey));
+        String votersKey = VoteRedisKeys.pollVoters(pollId);
+        redisTemplate.delete(List.of(optionKey, countKey, votersKey));
         List<String> optionMembers = optionIds.stream().map(String::valueOf).toList();
         redisTemplate.opsForSet().add(optionKey, optionMembers.toArray(String[]::new));
         Map<String, String> initialCount = new LinkedHashMap<>();
@@ -67,7 +68,8 @@ public class RedisVoteCounter {
     public void setPollCounts(Long pollId, List<Long> optionIds, Map<Long, Long> counts, long ballots) {
         String optionKey = VoteRedisKeys.pollOptions(pollId);
         String countKey = VoteRedisKeys.pollCounts(pollId);
-        redisTemplate.delete(List.of(optionKey, countKey));
+        String votersKey = VoteRedisKeys.pollVoters(pollId);
+        redisTemplate.delete(List.of(optionKey, countKey, votersKey));
         List<String> optionMembers = optionIds.stream().map(String::valueOf).toList();
         redisTemplate.opsForSet().add(optionKey, optionMembers.toArray(String[]::new));
         Map<String, String> counter = new LinkedHashMap<>();
@@ -129,6 +131,20 @@ public class RedisVoteCounter {
             redisTemplate.opsForHash().increment(VoteRedisKeys.pollCounts(pollId), String.valueOf(optionId), 1L);
         }
         redisTemplate.opsForHash().increment(VoteRedisKeys.pollCounts(pollId), BALLOTS_FIELD, 1L);
+    }
+
+    public boolean markVotedIfAbsent(Long pollId, String voterId) {
+        Long added = redisTemplate.opsForSet().add(VoteRedisKeys.pollVoters(pollId), voterId);
+        return Long.valueOf(1L).equals(added);
+    }
+
+    public void unmarkVoted(Long pollId, String voterId) {
+        redisTemplate.opsForSet().remove(VoteRedisKeys.pollVoters(pollId), voterId);
+    }
+
+    public boolean hasVoted(Long pollId, String voterId) {
+        Boolean exists = redisTemplate.opsForSet().isMember(VoteRedisKeys.pollVoters(pollId), voterId);
+        return Boolean.TRUE.equals(exists);
     }
 
     private long toLong(Object value) {

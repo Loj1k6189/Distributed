@@ -11,6 +11,8 @@ public interface VoteEventRepository extends JpaRepository<VoteEventEntity, Long
 
     long countByPollId(Long pollId);
 
+    boolean existsByPollIdAndVoterId(Long pollId, String voterId);
+
     List<VoteEventEntity> findByPollIdAndCreatedAtAfterOrderByCreatedAtAsc(Long pollId, Instant createdAt);
 
     @Query("select e.eventId from VoteEventEntity e where e.eventId in :eventIds")
