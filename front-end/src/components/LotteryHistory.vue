@@ -39,7 +39,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import axios from 'axios'
+import { http } from '../lib/http'
 
 const activityId = ref('')
 const page = ref(0)
@@ -58,10 +58,10 @@ const loadHistory = async () => {
   error.value = ''
   
   try {
-    const res = await axios.get(
+    const res = await http.get(
       `/api/lottery/${activityId.value}/history?page=${page.value}&size=${size.value}`
     )
-    history.value = res.data
+    history.value = res
   } catch (e) {
     error.value = '查询失败：' + (e.response?.data?.message || e.message)
   } finally {

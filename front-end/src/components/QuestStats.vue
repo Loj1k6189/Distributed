@@ -34,7 +34,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import axios from 'axios'
+import { http } from '../lib/http'
 
 const route = useRoute()
 const questionId = route.params.id
@@ -44,8 +44,8 @@ const loading = ref(true)
 
 const loadStats = async () => {
   try {
-    const res = await axios.get(`/api/v1/question/stats/${questionId}`)
-    stats.value = res.data
+    const res = await http.get(`/api/v1/question/stats/${questionId}`)
+    stats.value = res
   } catch (e) {
     alert('加载统计失败')
   } finally {

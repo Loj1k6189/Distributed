@@ -37,7 +37,7 @@
 
 <script setup>
 import { reactive, ref } from 'vue'
-import axios from 'axios'
+import { http } from '../lib/http'
 
 const loading = reactive({
   rebuild: false,
@@ -64,9 +64,8 @@ async function rebuild() {
   errors.rebuild = ''
   results.rebuild = ''
   try {
-    const res = await axios.post('/api/votes/admin/recovery/rebuild')
+    const body = await http.post('/api/votes/admin/recovery/rebuild')
     // 后端返回 int（重建影响数或状态），优先显示返回值
-    const body = res.data
     results.rebuild = `重建成功：${body ?? '操作已完成'}`
   } catch (e) {
     errors.rebuild = `重建失败：${e.response?.data?.message || e.message}`
@@ -81,7 +80,7 @@ async function snapshot() {
   results.snapshot = ''
   try {
     // snapshot 接口无返回 body，调用成功则提示已触发
-    await axios.post('/api/votes/admin/snapshot')
+    await http.post('/api/votes/admin/snapshot')
     results.snapshot = `快照已触发`;
   } catch (e) {
     errors.snapshot = `快照失败：${e.response?.data?.message || e.message}`
@@ -95,9 +94,9 @@ async function dlqRetry() {
   errors.dlq = ''
   results.dlq = ''
   try {
-    const res = await axios.post(`/api/votes/admin/dlq/retry?limit=${dlqLimit.value}`)
+    const res = await http.post(`/api/votes/admin/dlq/retry?limit=${dlqLimit.value}`)
     // 后端返回 { retriedCount }
-    const retried = res.data?.retriedCount ?? res.data
+    const retried = res?.retriedCount ?? res
     results.dlq = `DLQ 重试成功：已重试 ${retried} 条`;
   } catch (e) {
     errors.dlq = `DLQ 重试失败：${e.response?.data?.message || e.message}`

@@ -32,7 +32,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import axios from 'axios'
+import { http } from '../lib/http'
 
 const activityId = ref('')
 const round = ref(1)
@@ -57,10 +57,10 @@ const fetchWinners = async () => {
   fetched.value = false
 
   try {
-    const res = await axios.get(
+    const res = await http.get(
       `/api/lottery/${activityId.value.trim()}/winners/latest?round=${round.value}`
     )
-    winners.value = res.data
+    winners.value = res
     fetched.value = true
   } catch (e) {
     error.value = '查询失败：' + (e.response?.data?.message || e.message)

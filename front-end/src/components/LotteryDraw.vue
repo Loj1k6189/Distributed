@@ -30,7 +30,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import axios from 'axios'
+import { http } from '../lib/http'
 
 const activityId = ref('')
 const round = ref(1)
@@ -50,10 +50,10 @@ const draw = async () => {
   winners.value = []
   
   try {
-    const res = await axios.post(
+    const res = await http.post(
       `/api/lottery/${activityId.value}/draw?round=${round.value}&count=${count.value}`
     )
-    winners.value = res.data
+    winners.value = res
   } catch (e) {
     error.value = '抽奖失败：' + (e.response?.data?.message || e.message)
   } finally {

@@ -68,7 +68,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import axios from 'axios'
+import { http } from '../lib/http'
 
 type PollSummary = {
   pollId: number
@@ -123,8 +123,8 @@ const loadPollDetail = async (pollId: number) => {
   selectedMulti.value = []
   alreadySubmitted.value = false
   try {
-    const res = await axios.get(`/api/votes/polls/${pollId}/result`)
-    poll.value = res.data
+    const res = await http.get(`/api/votes/polls/${pollId}/result`)
+    poll.value = res
     await checkSubmitted()
   } catch (e: any) {
     alert('加载投票信息失败：' + (e.response?.data?.message || e.message))
@@ -136,8 +136,8 @@ const loadPollDetail = async (pollId: number) => {
 const loadActivePolls = async () => {
   loadingPolls.value = true
   try {
-    const res = await axios.get('/api/votes/polls?activeOnly=true')
-    activePolls.value = Array.isArray(res.data) ? res.data : []
+    const res = await http.get('/api/votes/polls?activeOnly=true')
+    activePolls.value = Array.isArray(res) ? res : []
     if (activePolls.value.length === 0) {
       selectedPollId.value = null
       poll.value = null
@@ -170,10 +170,8 @@ const checkSubmitted = async () => {
     return
   }
   try {
-    const res = await axios.get(`/api/votes/polls/${currentPollId}/submitted`, {
-      params: { voterId: currentVoter }
-    })
-    alreadySubmitted.value = Boolean(res.data?.submitted)
+    const res = await http.get(`/api/votes/polls/${currentPollId}/submitted?voterId=${encodeURIComponent(currentVoter)}`)
+    alreadySubmitted.value = Boolean(res?.submitted)
   } catch (e: any) {
     alreadySubmitted.value = false
     alert('校验投票状态失败：' + (e.response?.data?.message || e.message))
@@ -202,16 +200,33 @@ const submitVote = async () => {
   }
 
   submitting.value = true
+  // 乐观更新：本地先增加票数并标记已投
+  const prevPoll = poll.value ? JSON.parse(JSON.stringify(poll.value)) : null
   try {
-    await axios.post('/api/votes/submit', {
+    if (poll.value) {
+      // 增加总票数
+      poll.value.ballots = (poll.value.ballots ?? 0) + optionIds.value.length
+      // 增加各选项票数
+      for (const optId of optionIds.value) {
+        const opt = poll.value.options.find(o => o.optionId === optId)
+        if (opt) opt.votes = (opt.votes ?? 0) + 1
+      }
+    }
+    alreadySubmitted.value = true
+
+    await http.post('/api/votes/submit', {
       pollId: currentPollId,
       voterId: currentVoter,
       optionIds: optionIds.value
-    })
-    alreadySubmitted.value = true
+    }, { idempotencyKey: `${currentPollId}-${currentVoter}` })
+
     alert('投票成功！')
+    // 后端确认后刷新详情以保证最终一致性
     await loadPollDetail(currentPollId)
   } catch (e: any) {
+    // 回滚本地状态
+    if (prevPoll) poll.value = prevPoll
+    alreadySubmitted.value = false
     alert('投票失败：' + (e.response?.data?.message || e.message))
   } finally {
     submitting.value = false

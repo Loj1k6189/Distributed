@@ -37,7 +37,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import { http } from '../lib/http'
 
 const quests = ref([])
 const loading = ref(true)
@@ -47,8 +47,8 @@ const loadQuests = async () => {
   loading.value = true
   error.value = ''
   try {
-    const res = await axios.get('/api/v1/question')
-    quests.value = res.data
+    const res = await http.get('/api/v1/question')
+    quests.value = Array.isArray(res) ? res : []
   } catch (e) {
     error.value = '加载问卷列表失败：' + (e.response?.data?.message || e.message)
     console.error(e)

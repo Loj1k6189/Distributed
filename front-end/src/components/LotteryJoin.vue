@@ -13,7 +13,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRoute } from 'vue-router'
-import axios from 'axios'
+import { http } from '../lib/http'
 
 const route = useRoute()
 const activityId = route.params.activityId
@@ -31,13 +31,15 @@ const join = async () => {
   
   joining.value = true
   error.value = ''
-  result.value = ''
-  
+  const prevResult = result.value
+  // 乐观更新：先展示参与成功，后端失败则回滚
+  result.value = '已加入抽奖池（等待确认）'
   try {
-    await axios.post(`/api/lottery/${activityId}/join?userId=${userId.value.trim()}`)
+    await http.post(`/api/lottery/${activityId}/join?userId=${encodeURIComponent(userId.value.trim())}`, null, { idempotencyKey: `${activityId}-${userId.value.trim()}` })
     result.value = '参与成功！已加入抽奖池'
     userId.value = ''
   } catch (e) {
+    result.value = prevResult
     error.value = '参与失败：' + (e.response?.data?.message || e.message)
   } finally {
     joining.value = false
