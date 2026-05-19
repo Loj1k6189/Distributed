@@ -92,30 +92,8 @@ k6 run front-end/load-test/vote_submit.js
 - 所有写操作（投票、抽奖参与、问卷提交）应携带 `Idempotency-Key`。后端需要去重并返回明确的语义（重复提交应返回 200 并指出已存在）。
 - 前端不应依赖仅靠响应码判断业务成功，应以后端语义字段（如 `alreadyProcessed` / `submitted`）为准。
 
-## 本次变更清单（代码文件）
-
-- 新增：
-	- `src/lib/http.ts`
-	- `src/lib/debounce.ts`
-	- `src/lib/httpPlugin.ts`
-	- `front-end/HIGH_CONCURRENCY.md`（本文件）
-- 修改：
-	- `src/main.ts` （注册插件）
-	- 多个组件替换 `axios` 为 `http`：`Admin.vue`, `VoteSubmit.vue`, `LotteryJoin.vue`, `LotteryDraw.vue`, `LotteryWinners.vue`, `LotteryHistory.vue`, `CreatePoll.vue`, `QuestCreate.vue`, `QuestList.vue`, `QuestSubmit.vue`, `QuestStats.vue`, `VoteResult.vue` 等。
-
-## 下一步（可选，我可以为你执行）
-
-1. 将 `http` 做成 Vue 插件并替换全仓库剩余的 `axios` 用法（已替换关键组件，剩余文件较少）。
-2. 在 CI 中加入简单的压力测试作业（运行 k6 脚本）。
-3. 为关键写操作实现统一的乐观更新/补偿模式库（辅助回滚）。
-4. 集成 Sentry 或其他 RUM 服务，并在 `http` 中自动上报慢请求与错误。
-
-如果你希望我继续，我可以：
-- 完成全量替换所有 `axios` 的调用（并提交变更）；
-- 添加示例 `k6` 脚本到 `front-end/load-test/`；
-- 在 `VoteSubmit` 中增加更多并发保护与本地缓存示例。
 
 ---
 
-文件位置：`front-end/HIGH_CONCURRENCY.md`
+
 
