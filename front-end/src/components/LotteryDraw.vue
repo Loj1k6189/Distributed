@@ -1,16 +1,16 @@
 <template>
   <div class="lottery-draw">
     <h2>执行抽奖</h2>
-    <div>
-      <div>
+    <div class="draw-form">
+      <div class="form-row">
         <label>活动ID</label>
         <input v-model="activityId" />
       </div>
-      <div>
+      <div class="form-row">
         <label>轮次</label>
         <input v-model.number="round" type="number" min="1" />
       </div>
-      <div>
+      <div class="form-row">
         <label>抽奖人数</label>
         <input v-model.number="count" type="number" min="1" />
       </div>
@@ -61,3 +61,35 @@ const draw = async () => {
   }
 }
 </script>
+
+<style scoped>
+.lottery-draw {
+  max-width: 560px;
+}
+
+.draw-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.form-row :deep(input) {
+  max-width: 100%;
+}
+
+.winners ul {
+  margin-top: 8px;
+}
+
+.winners li {
+  margin-bottom: 6px;
+}
+</style>

@@ -24,5 +24,8 @@ final class VoteRedisKeys {
     static String rateLimit(Long pollId, String dimension, String value) {
         return "vote:limit:" + pollId + ":" + dimension + ":" + value;
     }
-}
 
+    static String pollVoters(Long pollId) {
+        return "vote:poll:" + pollId + ":voters";
+    }
+}
