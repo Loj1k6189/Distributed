@@ -16,7 +16,10 @@
       
       <!-- 抽奖系统 -->
       <strong>抽奖：</strong>
-      <router-link to="/lottery/draw">执行抽奖</router-link>
+      <router-link to="/lottery/draw">执行抽奖</router-link> |
+      <router-link to="/lottery/join/1">参与抽奖</router-link> |
+      <router-link to="/lottery/winners/1">中奖者</router-link> |
+      <router-link to="/lottery/history/1">中奖历史</router-link>
     </nav>
     
     <router-view />
