@@ -1,6 +1,17 @@
 <template>
   <div class="lottery-winners">
     <h2>查看中奖者</h2>
+    <div v-if="activities.length" class="activity-list">
+      <span class="label">当前活动：</span>
+      <button
+        v-for="item in activities"
+        :key="item"
+        class="activity-chip"
+        @click="activityId = item"
+      >
+        {{ item }}<span v-if="item === currentActivityId">（进行中）</span>
+      </button>
+    </div>
     <div class="search-bar">
       <div class="field">
         <label>活动ID</label>
@@ -31,7 +42,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { http } from '../lib/http'
 
 const activityId = ref('')
@@ -40,6 +51,8 @@ const loading = ref(false)
 const winners = ref([])
 const error = ref('')
 const fetched = ref(false) // 是否已经执行过查询
+const activities = ref([])
+const currentActivityId = ref('')
 
 const fetchWinners = async () => {
   if (!activityId.value.trim()) {
@@ -68,6 +81,21 @@ const fetchWinners = async () => {
     loading.value = false
   }
 }
+
+const loadActivities = async () => {
+  try {
+    const res = await http.get('/api/lottery/activities')
+    activities.value = res.activities ?? []
+    currentActivityId.value = res.currentActivityId ?? ''
+    if (!activityId.value && currentActivityId.value) {
+      activityId.value = currentActivityId.value
+    }
+  } catch (e) {
+    // ignore activity list errors for winners flow
+  }
+}
+
+onMounted(loadActivities)
 </script>
 
 <style scoped>
@@ -102,5 +130,24 @@ const fetchWinners = async () => {
 }
 .empty {
   color: #888;
+}
+
+.activity-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+  align-items: center;
+}
+
+.activity-list .label {
+  color: black;
+}
+
+.activity-chip {
+  border: 1px solid #ddd;
+  padding: 4px 8px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--primary), #06b6d4);
 }
 </style>

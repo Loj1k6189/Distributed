@@ -7,6 +7,20 @@
 
 ## 1. REST API 接口
 
+### 1.0 获取活动列表 (Activities)
+获取当前系统已识别的抽奖活动列表，并返回最近一次交互的活动 ID 作为“进行中”的默认值。
+
+**URL**: `/api/lottery/activities`
+**Method**: `GET`
+
+**返回**:
+```json
+{
+  "activities": ["annual-2026", "annual-2026-demo"],
+  "currentActivityId": "annual-2026"
+}
+```
+
 ### 1.1 加入抽奖池 (Join Pool)
 将指定用户放入当前抽奖活动的奖池中，通过 `Set` 的特性自动实现幂等（不可重复入池）。
 

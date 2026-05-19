@@ -1,6 +1,17 @@
 <template>
   <div class="lottery-draw">
     <h2>执行抽奖</h2>
+    <div v-if="activities.length" class="activity-list">
+      <span class="label">当前活动：</span>
+      <button
+        v-for="item in activities"
+        :key="item"
+        class="activity-chip"
+        @click="activityId = item"
+      >
+        {{ item }}<span v-if="item === currentActivityId">（进行中）</span>
+      </button>
+    </div>
     <div class="draw-form">
       <div class="form-row">
         <label>活动ID</label>
@@ -29,7 +40,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { http } from '../lib/http'
 
 const activityId = ref('')
@@ -38,6 +49,8 @@ const count = ref(5)
 const drawing = ref(false)
 const winners = ref([])
 const error = ref('')
+const activities = ref([])
+const currentActivityId = ref('')
 
 const draw = async () => {
   if (!activityId.value.trim()) {
@@ -60,6 +73,21 @@ const draw = async () => {
     drawing.value = false
   }
 }
+
+const loadActivities = async () => {
+  try {
+    const res = await http.get('/api/lottery/activities')
+    activities.value = res.activities ?? []
+    currentActivityId.value = res.currentActivityId ?? ''
+    if (!activityId.value && currentActivityId.value) {
+      activityId.value = currentActivityId.value
+    }
+  } catch (e) {
+    // ignore activity list errors for draw flow
+  }
+}
+
+onMounted(loadActivities)
 </script>
 
 <style scoped>
@@ -91,5 +119,24 @@ const draw = async () => {
 
 .winners li {
   margin-bottom: 6px;
+}
+
+.activity-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+  align-items: center;
+}
+
+.activity-list .label {
+  color: black;
+}
+
+.activity-chip {
+  border: 1px solid #ddd;
+  padding: 4px 8px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--primary), #06b6d4);
 }
 </style>
