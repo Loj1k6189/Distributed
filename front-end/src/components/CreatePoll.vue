@@ -28,7 +28,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import { http } from '../lib/http'
 
 const router = useRouter()
 const form = ref({
@@ -42,12 +42,12 @@ const submit = async () => {
   const options = optionsText.value.split('\n').map(s => s.trim()).filter(Boolean)
 
   try {
-    const res = await axios.post('/api/votes/polls', {
+    const res = await http.post('/api/votes/polls', {
       name: form.value.name,
       allowMultiple: form.value.type === 'MULTIPLE',
       options
     })
-    const pollId = res.data.pollId
+    const pollId = res.pollId
     alert('创建成功！ID：' + pollId)
     router.push(`/vote/${pollId}`)
   } catch (e) {

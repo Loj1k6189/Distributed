@@ -35,7 +35,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import axios from 'axios'
+import { http } from '../lib/http'
 
 const form = ref({
   title: '',
@@ -56,13 +56,13 @@ const removeOption = (idx) => {
 const submit = async () => {
   loading.value = true
   try {
-    const res = await axios.post('/api/v1/question', {
+    const res = await http.post('/api/v1/question', {
       title: form.value.title,
       description: form.value.description,
       allowMultiple: form.value.allowMultiple,
       options: form.value.options.filter(o => o.trim())
     })
-    alert('问卷创建成功！ID：' + res.data.id)
+    alert('问卷创建成功！ID：' + res.id)
     // 重置表单或跳转
   } catch (e) {
     alert('创建失败：' + (e.response?.data?.message || e.message))

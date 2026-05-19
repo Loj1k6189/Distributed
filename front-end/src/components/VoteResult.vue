@@ -45,7 +45,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import axios from 'axios'
+import { http } from '../lib/http'
 
 type PollSummary = {
   pollId: number
@@ -86,8 +86,8 @@ const resolvePollIdFromRoute = () => {
 const loadResult = async (pollId: number) => {
   loadingResult.value = true
   try {
-    const res = await axios.get(`/api/votes/polls/${pollId}/result`)
-    result.value = res.data
+    const res = await http.get(`/api/votes/polls/${pollId}/result`)
+    result.value = res
   } catch (e: any) {
     alert('加载结果失败：' + (e.response?.data?.message || e.message))
   } finally {
@@ -98,8 +98,8 @@ const loadResult = async (pollId: number) => {
 const loadPolls = async () => {
   loadingPolls.value = true
   try {
-    const res = await axios.get('/api/votes/polls')
-    polls.value = Array.isArray(res.data) ? res.data : []
+    const res = await http.get('/api/votes/polls')
+    polls.value = Array.isArray(res) ? res : []
     if (polls.value.length === 0) {
       selectedPollId.value = null
       result.value = null

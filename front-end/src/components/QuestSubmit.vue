@@ -49,7 +49,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import axios from 'axios'
+import { http } from '../lib/http'
 
 const route = useRoute()
 const questionId = route.params.id
@@ -64,8 +64,8 @@ const alreadySubmitted = ref(false)
 
 onMounted(async () => {
   try {
-    const res = await axios.get(`/api/v1/question/${questionId}`)
-    quest.value = res.data
+    const res = await http.get(`/api/v1/question/${questionId}`)
+    quest.value = res
   } catch (e) {
     alert('加载问卷失败')
   } finally {
@@ -76,10 +76,10 @@ onMounted(async () => {
 const checkSubmitted = async () => {
   if (!userId.value.trim()) return
   try {
-    const res = await axios.get(
-      `/api/v1/question/submitted?userId=${userId.value}&questionId=${questionId}`
+    const res = await http.get(
+      `/api/v1/question/submitted?userId=${encodeURIComponent(userId.value)}&questionId=${questionId}`
     )
-    alreadySubmitted.value = res.data.submitted
+    alreadySubmitted.value = res.submitted
   } catch (e) {
     console.error(e)
   }
@@ -102,11 +102,11 @@ const submit = async () => {
   
   submitting.value = true
   try {
-    await axios.post('/api/v1/question/submit', {
+    await http.post('/api/v1/question/submit', {
       questionId: Number(questionId),
       userId: userId.value.trim(),
       optionIds
-    })
+    }, { idempotencyKey: `${questionId}-${userId.value.trim()}` })
     alert('问卷提交成功')
     alreadySubmitted.value = true
   } catch (e) {
