@@ -34,7 +34,7 @@ public interface QuestionnaireRepository extends JpaRepository<Questionnaire, Lo
 
     List<Questionnaire> findByIsActiveTrueAndCreatedBy(String createdBy);
 
-    @Query("SELECT q FROM Questionnaire q WHERE q.isActive = true AND q.startTime <= :now AND (q.endTime IS NULL OR q.endTime >= :now)")
+    @Query("SELECT q FROM Questionnaire q WHERE q.isActive = true AND (q.startTime IS NULL OR q.startTime <= :now) AND (q.endTime IS NULL OR q.endTime >= :now)")
     List<Questionnaire> findActiveQuestionnaires(@Param("now") LocalDateTime now);
 
     boolean existsByCreatedByAndTitle(String createdBy, String title);

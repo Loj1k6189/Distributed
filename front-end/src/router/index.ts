@@ -16,6 +16,12 @@ import LotteryDraw from '../components/LotteryDraw.vue'
 import LotteryWinners from '../components/LotteryWinners.vue'
 import LotteryHistory from '../components/LotteryHistory.vue'
 
+// 新增接龙相关组件
+import ChainList from '../components/ChainList.vue'
+import ChainCreate from '../components/ChainCreate.vue'
+import ChainJoin from '../components/ChainJoin.vue'
+import ChainManage from '../components/ChainManage.vue'
+
 const routes = [
   { path: '/', redirect: '/create' },
 
@@ -30,8 +36,14 @@ const routes = [
   // ===== 问卷系统 =====
   { path: '/quest/create', component: QuestCreate },
   { path: '/quest/list', component: QuestList },
-  { path: '/quest/submit/:id', component: QuestSubmit },
-  { path: '/quest/stats/:id', component: QuestStats },
+  { path: '/quest/submit/:id?', component: QuestSubmit },
+  { path: '/quest/stats/:id?', component: QuestStats },
+
+  // ===== 接龙系统 =====
+  { path: '/chain/list', component: ChainList },
+  { path: '/chain/create', component: ChainCreate },
+  { path: '/chain/join/:id?', component: ChainJoin },
+  { path: '/chain/manage/:id?', component: ChainManage },
   
   // ===== 抽奖系统 =====
   { path: '/lottery/join/:activityId', component: LotteryJoin },

@@ -5,7 +5,7 @@
         <div class="brand-mark" />
         <div>
           <h1>现场活动系统</h1>
-          <p>投票 · 问卷 · 抽奖</p>
+          <p>投票 · 问卷 · 接龙 · 抽奖</p>
         </div>
       </div>
       <nav class="primary-nav">
@@ -100,8 +100,20 @@ const modules: NavModule[] = [
     items: [
       { key: 'quest-list', label: '问卷列表', path: '/quest/list', matchPrefix: ['/quest/list'] },
       { key: 'quest-create', label: '创建问卷', path: '/quest/create', matchPrefix: ['/quest/create'] },
-      { key: 'quest-submit', label: '参与问卷', path: '/quest/submit/1', matchPrefix: ['/quest/submit'] },
-      { key: 'quest-stats', label: '问卷统计', path: '/quest/stats/1', matchPrefix: ['/quest/stats'] }
+      { key: 'quest-submit', label: '参与问卷', path: '/quest/submit', matchPrefix: ['/quest/submit'] },
+      { key: 'quest-stats', label: '问卷统计', path: '/quest/stats', matchPrefix: ['/quest/stats'] }
+    ]
+  },
+  {
+    id: 'chain',
+    title: '接龙',
+    defaultPath: '/chain/list',
+    matchPrefix: ['/chain'],
+    items: [
+      { key: 'chain-list', label: '接龙列表', path: '/chain/list', matchPrefix: ['/chain/list'] },
+      { key: 'chain-create', label: '创建接龙', path: '/chain/create', matchPrefix: ['/chain/create'] },
+      { key: 'chain-join', label: '参与接龙', path: '/chain/join', matchPrefix: ['/chain/join'] },
+      { key: 'chain-manage', label: '接龙管理', path: '/chain/manage', matchPrefix: ['/chain/manage'] }
     ]
   },
   {

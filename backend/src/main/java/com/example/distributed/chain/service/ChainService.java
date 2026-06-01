@@ -20,6 +20,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -30,6 +31,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class ChainService {
+    private static final ZoneId APP_ZONE = ZoneId.of("Asia/Shanghai");
 
     private final ChainRepository chainRepository;
     private final ChainEntryRepository chainEntryRepository;
@@ -90,9 +92,10 @@ public class ChainService {
      */
     @Transactional
     public List<ChainResponse> getActiveChains() {
-        LocalDateTime now = LocalDateTime.now();
-        return chainRepository.findActiveChains(now)
+        LocalDateTime now = currentTime();
+        return chainRepository.findByIsActiveTrue()
                 .stream()
+                .filter(chain -> isActiveAt(chain, now))
                 .map(chain -> {
                     List<ChainEntry> entries = chainEntryRepository.findByChainIdOrderBySequenceNoAsc(chain.getId());
                     return toChainResponse(chain, entries);
@@ -133,7 +136,7 @@ public class ChainService {
             throw new ChainException(ChainException.ErrorCode.CHAIN_INACTIVE);
         }
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = currentTime();
         if (chain.getStartTime() != null && now.isBefore(chain.getStartTime())) {
             throw new ChainException(ChainException.ErrorCode.CHAIN_NOT_STARTED);
         }
@@ -251,5 +254,16 @@ public class ChainService {
                 .parentEntryId(entry.getParentEntryId())
                 .createdAt(entry.getCreatedAt())
                 .build();
+    }
+
+    private boolean isActiveAt(Chain chain, LocalDateTime now) {
+        if (chain.getStartTime() != null && chain.getStartTime().isAfter(now)) {
+            return false;
+        }
+        return chain.getEndTime() == null || !chain.getEndTime().isBefore(now);
+    }
+
+    private LocalDateTime currentTime() {
+        return LocalDateTime.now(APP_ZONE);
     }
 }

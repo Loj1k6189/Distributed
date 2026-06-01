@@ -17,7 +17,7 @@
         
         <div class="quest-meta">
           <span>创建时间：{{ formatTime(quest.createdAt) }}</span>
-          <span v-if="quest.expiresAt">过期时间：{{ formatTime(quest.expiresAt) }}</span>
+          <span v-if="quest.endTime">结束时间：{{ formatTime(quest.endTime) }}</span>
         </div>
         
         <div class="quest-actions">
@@ -47,8 +47,8 @@ const loadQuests = async () => {
   loading.value = true
   error.value = ''
   try {
-    const res = await http.get('/api/v1/question')
-    quests.value = Array.isArray(res) ? res : []
+    const res = await http.get('/api/questionnaires/active')
+    quests.value = Array.isArray(res?.data) ? res.data : []
   } catch (e) {
     error.value = '加载问卷列表失败：' + (e.response?.data?.message || e.message)
     console.error(e)

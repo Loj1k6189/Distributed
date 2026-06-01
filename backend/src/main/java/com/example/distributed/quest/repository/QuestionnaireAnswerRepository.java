@@ -23,6 +23,16 @@ public interface QuestionnaireAnswerRepository extends JpaRepository<Questionnai
     @Query("SELECT qa FROM QuestionnaireAnswer qa WHERE qa.questionnaire.id = :questionnaireId ORDER BY qa.submittedAt DESC")
     List<QuestionnaireAnswer> findByQuestionnaireIdOrderBySubmittedAt(@Param("questionnaireId") Long questionnaireId);
 
+    @Query("""
+            SELECT qa
+            FROM QuestionnaireAnswer qa
+            LEFT JOIN FETCH qa.questionAnswers qans
+            LEFT JOIN FETCH qans.question
+            WHERE qa.questionnaire.id = :questionnaireId
+            ORDER BY qa.submittedAt DESC
+            """)
+    List<QuestionnaireAnswer> findWithAnswersByQuestionnaireId(@Param("questionnaireId") Long questionnaireId);
+
     @Query("SELECT COUNT(qa) FROM QuestionnaireAnswer qa WHERE qa.questionnaire.id = :questionnaireId")
     Long countByQuestionnaireId(@Param("questionnaireId") Long questionnaireId);
 

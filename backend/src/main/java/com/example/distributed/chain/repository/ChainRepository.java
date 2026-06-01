@@ -26,7 +26,7 @@ public interface ChainRepository extends JpaRepository<Chain, Long> {
 
     List<Chain> findByIsActiveTrueAndCreatedBy(String createdBy);
 
-    @Query("SELECT c FROM Chain c WHERE c.isActive = true AND c.startTime <= :now AND (c.endTime IS NULL OR c.endTime >= :now)")
+    @Query("SELECT c FROM Chain c WHERE c.isActive = true AND (c.startTime IS NULL OR c.startTime <= :now) AND (c.endTime IS NULL OR c.endTime >= :now)")
     List<Chain> findActiveChains(@Param("now") LocalDateTime now);
 
     boolean existsByCreatedByAndTitle(String createdBy, String title);

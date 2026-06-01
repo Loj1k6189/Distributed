@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class QuestionnaireService {
+    private static final ZoneId APP_ZONE = ZoneId.of("Asia/Shanghai");
 
     private final QuestionnaireRepository questionnaireRepository;
     private final QuestionRepository questionRepository;
@@ -151,9 +153,10 @@ public class QuestionnaireService {
      */
     @Transactional
     public List<QuestionnaireResponse> getActiveQuestionnaires() {
-        LocalDateTime now = LocalDateTime.now();
-        return questionnaireRepository.findActiveQuestionnaires(now)
+        LocalDateTime now = currentTime();
+        return questionnaireRepository.findByIsActiveTrue()
                 .stream()
+                .filter(questionnaire -> isActiveAt(questionnaire, now))
                 .map(this::toQuestionnaireResponse)
                 .collect(Collectors.toList());
     }
@@ -199,7 +202,7 @@ public class QuestionnaireService {
             throw new QuestionnaireException(QuestionnaireException.ErrorCode.QUESTIONNAIRE_INACTIVE);
         }
 
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = currentTime();
         if (questionnaire.getStartTime() != null && now.isBefore(questionnaire.getStartTime())) {
             throw new QuestionnaireException(QuestionnaireException.ErrorCode.QUESTIONNAIRE_NOT_STARTED);
         }
@@ -232,7 +235,7 @@ public class QuestionnaireService {
                 .userAgent(userAgent)
                 .isAnonymous(isAnonymous)
                 .startTime(request.getStartTime())
-                .submittedAt(LocalDateTime.now())
+                .submittedAt(currentTime())
                 .build();
 
         // 计算完成时间
@@ -304,7 +307,7 @@ public class QuestionnaireService {
      */
     @Transactional
     protected void updateStatistics(Long questionnaireId, boolean isAnonymous, Long completionTime) {
-        LocalDateTime today = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0).withNano(0);
+        LocalDateTime today = currentTime().withHour(0).withMinute(0).withSecond(0).withNano(0);
 
         QuestionnaireStatistics statistics = statisticsRepository
                 .findByQuestionnaireIdAndSnapshotDateBetween(questionnaireId, today, today.plusDays(1))
@@ -331,7 +334,7 @@ public class QuestionnaireService {
             statistics.setAverageCompletionTime(newAvg);
         }
 
-        statistics.setLastSubmissionAt(LocalDateTime.now());
+        statistics.setLastSubmissionAt(currentTime());
         statisticsRepository.save(statistics);
     }
 
@@ -346,7 +349,7 @@ public class QuestionnaireService {
         response.setPartialSubmissions(0L);
         response.setUniqueUsers(answerRepository.countUniqueUsersByQuestionnaireId(questionnaireId));
         response.setAnonymousSubmissions(answerRepository.countAnonymousByQuestionnaireId(questionnaireId));
-        response.setSnapshotDate(LocalDateTime.now().toString());
+        response.setSnapshotDate(currentTime().toString());
         return response;
     }
 
@@ -446,5 +449,16 @@ public class QuestionnaireService {
                 statistics.getLastSubmissionAt().toString() : null);
         response.setSnapshotDate(statistics.getSnapshotDate().toString());
         return response;
+    }
+
+    private boolean isActiveAt(Questionnaire questionnaire, LocalDateTime now) {
+        if (questionnaire.getStartTime() != null && questionnaire.getStartTime().isAfter(now)) {
+            return false;
+        }
+        return questionnaire.getEndTime() == null || !questionnaire.getEndTime().isBefore(now);
+    }
+
+    private LocalDateTime currentTime() {
+        return LocalDateTime.now(APP_ZONE);
     }
 }
