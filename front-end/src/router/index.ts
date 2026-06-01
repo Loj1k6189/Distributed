@@ -17,9 +17,13 @@ import LotteryWinners from '../components/LotteryWinners.vue'
 import LotteryHistory from '../components/LotteryHistory.vue'
 
 const routes = [
+  { path: '/', redirect: '/create' },
+
   // ===== 投票系统 =====
   { path: '/create', component: CreatePoll },
+  { path: '/vote', component: VoteSubmit },
   { path: '/vote/:id', component: VoteSubmit },
+  { path: '/result', component: VoteResult },
   { path: '/result/:id', component: VoteResult },
   { path: '/admin', component: Admin },
   

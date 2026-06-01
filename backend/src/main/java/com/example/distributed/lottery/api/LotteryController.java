@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.distributed.lottery.domain.LotteryHistory;
 import com.example.distributed.lottery.service.LotteryService;
+import com.example.distributed.lottery.api.LotteryActivitiesResponse;
 
 import lombok.RequiredArgsConstructor;
 
@@ -40,5 +41,10 @@ public class LotteryController {
     @GetMapping("/{activityId}/history")
     public Page<LotteryHistory> getHistory(@PathVariable String activityId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
         return lotteryService.getHistory(activityId, page, size);
+    }
+
+    @GetMapping("/activities")
+    public LotteryActivitiesResponse getActivities() {
+        return lotteryService.getActivities();
     }
 }

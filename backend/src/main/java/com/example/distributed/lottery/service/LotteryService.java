@@ -12,6 +12,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.distributed.lottery.api.LotteryActivitiesResponse;
 import com.example.distributed.lottery.domain.LotteryHistory;
 import com.example.distributed.lottery.repository.LotteryHistoryRepository;
 
@@ -28,13 +29,17 @@ public class LotteryService {
     private static final String POOL_KEY_PREFIX = "lottery:pool:";
     private static final String WINNERS_KEY_PREFIX = "lottery:winners:";
     private static final String ROUND_WINNERS_KEY_PREFIX = "lottery:round_winners:";
+    private static final String ACTIVITIES_KEY = "lottery:activities";
+    private static final String CURRENT_ACTIVITY_KEY = "lottery:current_activity";
 
     public void joinPool(String activityId, String userId) {
+        markActivityActive(activityId);
         redisTemplate.opsForSet().add(POOL_KEY_PREFIX + activityId, userId);
     }
 
     @Transactional
     public List<String> draw(String activityId, int round, int count) {
+        markActivityActive(activityId);
         String poolKey = POOL_KEY_PREFIX + activityId;
         String allWinnersKey = WINNERS_KEY_PREFIX + activityId;
         String roundWinnersKey = ROUND_WINNERS_KEY_PREFIX + activityId + ":" + round;
@@ -93,5 +98,23 @@ public class LotteryService {
 
     public Page<LotteryHistory> getHistory(String activityId, int page, int size) {
         return historyRepository.findByActivityId(activityId, PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "wonAt")));
+    }
+
+    public LotteryActivitiesResponse getActivities() {
+        var activitySet = redisTemplate.opsForSet().members(ACTIVITIES_KEY);
+        var fromRedis = activitySet == null ? List.<String>of() : new ArrayList<>(activitySet);
+        var fromHistory = historyRepository.findDistinctActivityIds();
+        var merged = new java.util.LinkedHashSet<String>();
+        merged.addAll(fromRedis);
+        merged.addAll(fromHistory);
+        var activities = new ArrayList<>(merged);
+        activities.sort(String::compareTo);
+        var current = redisTemplate.opsForValue().get(CURRENT_ACTIVITY_KEY);
+        return new LotteryActivitiesResponse(activities, current);
+    }
+
+    private void markActivityActive(String activityId) {
+        redisTemplate.opsForSet().add(ACTIVITIES_KEY, activityId);
+        redisTemplate.opsForValue().set(CURRENT_ACTIVITY_KEY, activityId);
     }
 }

@@ -1,3 +1,11 @@
 {
-    "java.compile.nullAnalysis.mode": "automatic"
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.home": "D:\\Java",
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-21",
+            "path": "D:\\Java",
+            "default": true
+        }
+    ]
 }

@@ -1,6 +1,17 @@
 <template>
   <div class="lottery-history">
     <h2>中奖历史</h2>
+    <div v-if="activities.length" class="activity-list">
+      <span class="label">当前活动：</span>
+      <button
+        v-for="item in activities"
+        :key="item"
+        class="activity-chip"
+        @click="activityId = item"
+      >
+        {{ item }}<span v-if="item === currentActivityId">（进行中）</span>
+      </button>
+    </div>
     <div>
       <input v-model="activityId" placeholder="输入活动ID" />
       <button @click="loadHistory" :disabled="loading">查询</button>
@@ -38,8 +49,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import axios from 'axios'
+import { onMounted, ref } from 'vue'
+import { http } from '../lib/http'
 
 const activityId = ref('')
 const page = ref(0)
@@ -47,6 +58,8 @@ const size = ref(10)
 const loading = ref(false)
 const history = ref({ content: [], totalPages: 0 })
 const error = ref('')
+const activities = ref([])
+const currentActivityId = ref('')
 
 const loadHistory = async () => {
   if (!activityId.value.trim()) {
@@ -58,10 +71,10 @@ const loadHistory = async () => {
   error.value = ''
   
   try {
-    const res = await axios.get(
+    const res = await http.get(
       `/api/lottery/${activityId.value}/history?page=${page.value}&size=${size.value}`
     )
-    history.value = res.data
+    history.value = res
   } catch (e) {
     error.value = '查询失败：' + (e.response?.data?.message || e.message)
   } finally {
@@ -86,4 +99,40 @@ const nextPage = () => {
 const formatTime = (isoString) => {
   return new Date(isoString).toLocaleString('zh-CN')
 }
+
+const loadActivities = async () => {
+  try {
+    const res = await http.get('/api/lottery/activities')
+    activities.value = res.activities ?? []
+    currentActivityId.value = res.currentActivityId ?? ''
+    if (!activityId.value && currentActivityId.value) {
+      activityId.value = currentActivityId.value
+    }
+  } catch (e) {
+    // ignore activity list errors for history flow
+  }
+}
+
+onMounted(loadActivities)
 </script>
+
+<style scoped>
+.activity-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+  align-items: center;
+}
+
+.activity-list .label {
+  color: black;
+}
+
+.activity-chip {
+  border: 1px solid #ddd;
+  padding: 4px 8px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--primary), #06b6d4);
+}
+</style>

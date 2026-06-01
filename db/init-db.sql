@@ -98,6 +98,14 @@ CREATE TABLE IF NOT EXISTS lottery_history (
     INDEX idx_won_at (won_at)
 );
 
+-- 初始化示例测试数据（用于验证查询和翻页接口）
+INSERT IGNORE INTO lottery_history (activity_id, user_id, round, won_at) VALUES 
+('annual-2026', 'u_test_mock_1', 1, '2026-05-17 10:00:00'),
+('annual-2026', 'u_test_mock_2', 1, '2026-05-17 10:00:00'),
+('annual-2026', 'u_test_mock_3', 2, '2026-05-17 10:15:00'),
+('annual-2026', 'u_test_mock_4', 2, '2026-05-17 10:15:00'),
+('annual-2026-demo', 'u_test_mock_5', 1, '2026-05-17 11:00:00');
+
 -- 问卷主表
 CREATE TABLE IF NOT EXISTS questionnaires (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,

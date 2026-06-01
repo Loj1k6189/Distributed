@@ -6,8 +6,9 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:8080', // 后端地址
-        changeOrigin: true
+        target: 'http://localhost:8080', // 后端地址 (映射到宿主机端口)
+        changeOrigin: true,
+        ws: true
       }
     }
   }

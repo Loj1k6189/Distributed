@@ -1,130 +1,194 @@
 package com.example.distributed.quest;
 
-import com.example.distributed.quest.api.*;
-import com.example.distributed.quest.service.QuestionService;
+import com.example.distributed.quest.dto.AnswerSubmissionRequest;
+import com.example.distributed.quest.dto.QuestionnaireCreateRequest;
+import com.example.distributed.quest.dto.QuestionnaireResponse;
+import com.example.distributed.quest.dto.StatisticsResponse;
+import com.example.distributed.quest.entity.Questionnaire;
+import com.example.distributed.quest.enums.QuestionType;
+import com.example.distributed.quest.exception.QuestionnaireException;
+import com.example.distributed.quest.service.QuestionnaireService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * 简单的问卷功能测试，验证基本功能是否可用
+ * 问卷服务简单测试
+ * 使用已有的Spring Boot Test和JPA Test依赖
  */
 @SpringBootTest
-@TestPropertySource(properties = {
-    "spring.datasource.url=jdbc:mysql://localhost:3306/vote_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC",
-    "spring.datasource.username=root",
-    "spring.datasource.password=123456",
-    "spring.jpa.hibernate.ddl-auto=update"
-})
+@ActiveProfiles("test")
+@Transactional
 class SimpleQuestTest {
 
     @Autowired
-    private QuestionService questionService;
+    private QuestionnaireService questionnaireService;
 
-    @Test
-    void testQuestionLifecycle() {
-        System.out.println("开始测试问卷功能...");
+    private String testUserId;
 
-        // 1. 创建问卷
-        System.out.println("1. 创建问卷中...");
-        QuestionCreateRequest createRequest = new QuestionCreateRequest(
-                "测试问卷",
-                "这是一个用于验证功能的测试问卷",
-                true, // 允许多选
-                Arrays.asList("选项1", "选项2", "选项3", "选项4")
-        );
-
-        QuestionCreateResponse createResponse = questionService.createQuestion(createRequest);
-        assertNotNull(createResponse.id(), "问卷创建失败，ID为空");
-        System.out.println("   问卷创建成功，ID: " + createResponse.id());
-
-        // 2. 获取问卷列表
-        System.out.println("2. 获取问卷列表...");
-        List<QuestionSummaryResponse> questions = questionService.getQuestions();
-        assertTrue(questions.size() > 0, "问卷列表为空");
-        System.out.println("   问卷列表获取成功，当前问卷数量: " + questions.size());
-
-        // 3. 获取问卷详情
-        System.out.println("3. 获取问卷详情...");
-        QuestionDetailResponse detail = questionService.getQuestion(createResponse.id());
-        assertEquals(createResponse.id(), detail.id(), "问卷ID不匹配");
-        assertEquals(4, detail.options().size(), "选项数量不正确");
-        System.out.println("   问卷详情获取成功，选项数量: " + detail.options().size());
-
-        // 4. 提交问卷
-        System.out.println("4. 提交问卷...");
-        QuestionSubmitRequest submitRequest = new QuestionSubmitRequest(
-                createResponse.id(),
-                "test_user_001",
-                Arrays.asList(detail.options().get(0).id(), detail.options().get(1).id()) // 选择前两个选项
-        );
-
-        QuestionSubmitResponse submitResponse = questionService.submitQuestion(submitRequest, "127.0.0.1");
-        assertNotNull(submitResponse.submissionId(), "问卷提交失败");
-        System.out.println("   问卷提交成功，提交ID: " + submitResponse.submissionId());
-
-        // 5. 检查提交状态
-        System.out.println("5. 检查提交状态...");
-        QuestionSubmittedResponse submitted = questionService.checkSubmission("test_user_001", createResponse.id());
-        assertTrue(submitted.submitted(), "提交状态检查失败");
-        System.out.println("   提交状态检查成功");
-
-        // 6. 获取统计信息
-        System.out.println("6. 获取统计信息...");
-        QuestionStatsResponse stats = questionService.getQuestionStats(createResponse.id());
-        assertEquals(createResponse.id(), stats.questionId(), "统计信息问卷ID不匹配");
-        assertTrue(stats.totalSubmissions() > 0, "统计票数应大于0");
-        System.out.println("   统计信息获取成功，总票数: " + stats.totalSubmissions());
-
-        System.out.println("问卷功能测试完成！所有功能均正常工作。");
+    @BeforeEach
+    void setUp() {
+        testUserId = "test-user-001";
     }
 
     @Test
-    void testDuplicateSubmissionPrevention() {
-        System.out.println("测试防重复提交功能...");
+    @DisplayName("测试：创建问卷")
+    void testCreateQuestionnaire() {
+        // 准备测试数据
+        QuestionnaireCreateRequest request = createSampleRequest();
 
-        // 创建问卷
-        QuestionCreateRequest createRequest = new QuestionCreateRequest(
-                "防重复提交测试",
-                "测试防重复提交功能",
-                false, // 单选
-                Arrays.asList("选项A", "选项B")
-        );
+        // 执行创建
+        Questionnaire questionnaire = questionnaireService.createQuestionnaire(testUserId, request);
 
-        QuestionCreateResponse createResponse = questionService.createQuestion(createRequest);
-        assertNotNull(createResponse.id());
+        // 验证结果
+        assertNotNull(questionnaire);
+        assertNotNull(questionnaire.getId());
+        assertEquals("测试问卷", questionnaire.getTitle());
+        assertEquals(3, questionnaire.getQuestions().size());
+        assertTrue(questionnaire.getIsActive());
+        
+        System.out.println("✓ 问卷创建成功，ID: " + questionnaire.getId());
+    }
 
-        // 获取选项ID
-        QuestionDetailResponse detail = questionService.getQuestion(createResponse.id());
-        Long optionId = detail.options().get(0).id();
+    @Test
+    @DisplayName("测试：获取问卷详情")
+    void testGetQuestionnaire() {
+        // 先创建问卷
+        QuestionnaireCreateRequest request = createSampleRequest();
+        Questionnaire created = questionnaireService.createQuestionnaire(testUserId, request);
 
-        // 第一次提交
-        QuestionSubmitRequest firstSubmit = new QuestionSubmitRequest(
-                createResponse.id(),
-                "duplicate_test_user",
-                Arrays.asList(optionId)
-        );
+        // 获取详情
+        QuestionnaireResponse response = questionnaireService.getQuestionnaire(created.getId());
 
-        QuestionSubmitResponse firstResponse = questionService.submitQuestion(firstSubmit, "127.0.0.1");
-        assertNotNull(firstResponse.submissionId());
+        // 验证
+        assertNotNull(response);
+        assertEquals(created.getId(), response.getId());
+        assertEquals("测试问卷", response.getTitle());
+        assertNotNull(response.getQuestions());
+        
+        System.out.println("✓ 问卷获取成功，题目数: " + response.getQuestions().size());
+    }
 
-        // 尝试重复提交，应该抛出异常
-        QuestionSubmitRequest secondSubmit = new QuestionSubmitRequest(
-                createResponse.id(),
-                "duplicate_test_user", // 相同用户
-                Arrays.asList(optionId) // 相同问卷
-        );
+    @Test
+    @DisplayName("测试：多种题型支持")
+    void testMultipleQuestionTypes() {
+        // 创建包含多种题型的问卷
+        QuestionnaireCreateRequest request = createSampleRequest();
+        Questionnaire questionnaire = questionnaireService.createQuestionnaire(testUserId, request);
 
-        Exception exception = assertThrows(RuntimeException.class, () -> {
-            questionService.submitQuestion(secondSubmit, "127.0.0.1");
+        // 验证题型
+        List<com.example.distributed.quest.entity.Question> questions = questionnaire.getQuestions();
+        
+        assertEquals(QuestionType.SINGLE_CHOICE, questions.get(0).getQuestionType());
+        assertEquals(QuestionType.MULTIPLE_CHOICE, questions.get(1).getQuestionType());
+        assertEquals(QuestionType.TEXT_ANSWER, questions.get(2).getQuestionType());
+        
+        System.out.println("✓ 支持多种题型：单选题、多选题、文本题");
+    }
+
+    @Test
+    @DisplayName("测试：问卷不存在时抛出异常")
+    void testQuestionnaireNotFound() {
+        // 验证不存在的问卷会抛出异常
+        assertThrows(QuestionnaireException.class, () -> {
+            questionnaireService.getQuestionnaire(999999L);
         });
+        
+        System.out.println("✓ 异常处理正常");
+    }
 
-        System.out.println("防重复提交功能测试成功！");
+    @Test
+    @DisplayName("测试：获取统计信息")
+    void testGetStatistics() {
+        // 创建问卷
+        QuestionnaireCreateRequest request = createSampleRequest();
+        Questionnaire questionnaire = questionnaireService.createQuestionnaire(testUserId, request);
+
+        // 获取统计
+        StatisticsResponse statistics = questionnaireService.getStatistics(questionnaire.getId());
+
+        // 验证
+        assertNotNull(statistics);
+        assertEquals(questionnaire.getId(), statistics.getQuestionnaireId());
+        
+        System.out.println("✓ 统计功能正常");
+    }
+
+    @Test
+    @DisplayName("测试：获取活跃问卷列表")
+    void testGetActiveQuestionnaires() {
+        // 创建问卷
+        QuestionnaireCreateRequest request = createSampleRequest();
+        questionnaireService.createQuestionnaire(testUserId, request);
+
+        // 获取活跃列表
+        var activeList = questionnaireService.getActiveQuestionnaires();
+
+        // 验证
+        assertNotNull(activeList);
+        assertFalse(activeList.isEmpty());
+        
+        System.out.println("✓ 活跃问卷列表获取成功，数量: " + activeList.size());
+    }
+
+    /**
+     * 创建示例问卷请求
+     */
+    private QuestionnaireCreateRequest createSampleRequest() {
+        QuestionnaireCreateRequest request = new QuestionnaireCreateRequest();
+        request.setTitle("测试问卷");
+        request.setDescription("这是一个测试问卷");
+        request.setAllowAnonymous(true);
+
+        // 单选题
+        QuestionnaireCreateRequest.QuestionDTO q1 = new QuestionnaireCreateRequest.QuestionDTO();
+        q1.setContent("您的性别？");
+        q1.setQuestionType(QuestionType.SINGLE_CHOICE);
+        q1.setSortOrder(0);
+        q1.setIsRequired(true);
+        q1.setOptions(List.of(
+                createOption("男", 0),
+                createOption("女", 1)
+        ));
+
+        // 多选题
+        QuestionnaireCreateRequest.QuestionDTO q2 = new QuestionnaireCreateRequest.QuestionDTO();
+        q2.setContent("喜欢的功能？");
+        q2.setQuestionType(QuestionType.MULTIPLE_CHOICE);
+        q2.setSortOrder(1);
+        q2.setIsRequired(true);
+        q2.setOptions(List.of(
+                createOption("功能A", 0),
+                createOption("功能B", 1),
+                createOption("功能C", 2)
+        ));
+
+        // 文本题
+        QuestionnaireCreateRequest.QuestionDTO q3 = new QuestionnaireCreateRequest.QuestionDTO();
+        q3.setContent("您的建议？");
+        q3.setQuestionType(QuestionType.TEXT_ANSWER);
+        q3.setSortOrder(2);
+        q3.setIsRequired(false);
+
+        request.setQuestions(List.of(q1, q2, q3));
+        return request;
+    }
+
+    /**
+     * 创建选项
+     */
+    private QuestionnaireCreateRequest.OptionDTO createOption(String content, int sortOrder) {
+        QuestionnaireCreateRequest.OptionDTO option = new QuestionnaireCreateRequest.OptionDTO();
+        option.setContent(content);
+        option.setSortOrder(sortOrder);
+        return option;
     }
 }

@@ -1,19 +1,19 @@
 <!-- src/components/CreatePoll.vue -->
 <template>
-  <div>
+  <div class="create-poll">
     <h2>创建投票活动</h2>
 
-    <div>
+    <div class="form-row">
       <label>标题：</label>
       <input v-model="form.name" placeholder="输入投票标题" />
     </div>
 
-    <div style="margin: 10px 0">
+    <div class="form-row">
       <label>选项（每行一个）：</label>
       <textarea v-model="optionsText" rows="4" placeholder="选项1&#10;选项2&#10;选项3"></textarea>
     </div>
 
-    <div>
+    <div class="form-row">
       <label>类型：</label>
       <select v-model="form.type">
         <option value="SINGLE">单选</option>
@@ -21,14 +21,14 @@
       </select>
     </div>
 
-    <button @click="submit" style="margin-top:10px">创建投票</button>
+    <button @click="submit" class="submit-btn">创建投票</button>
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import { http } from '../lib/http'
 
 const router = useRouter()
 const form = ref({
@@ -42,12 +42,12 @@ const submit = async () => {
   const options = optionsText.value.split('\n').map(s => s.trim()).filter(Boolean)
 
   try {
-    const res = await axios.post('/api/votes/polls', {
+    const res = await http.post('/api/votes/polls', {
       name: form.value.name,
       allowMultiple: form.value.type === 'MULTIPLE',
       options
     })
-    const pollId = res.data.pollId
+    const pollId = res.pollId
     alert('创建成功！ID：' + pollId)
     router.push(`/vote/${pollId}`)
   } catch (e) {
@@ -56,3 +56,27 @@ const submit = async () => {
   }
 }
 </script>
+
+<style scoped>
+.create-poll {
+  max-width: 560px;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.form-row :deep(input),
+.form-row :deep(textarea),
+.form-row :deep(select) {
+  max-width: 100%;
+}
+
+.submit-btn {
+  margin-top: 8px;
+}
+</style>
